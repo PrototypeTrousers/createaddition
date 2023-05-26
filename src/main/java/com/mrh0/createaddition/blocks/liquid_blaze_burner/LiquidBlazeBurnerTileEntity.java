@@ -98,8 +98,6 @@ public class LiquidBlazeBurnerTileEntity extends SmartTileEntity implements IHav
 			return;
 		}
 
-		burningTick();
-
 		if (isCreative)
 			return;
 
@@ -108,9 +106,12 @@ public class LiquidBlazeBurnerTileEntity extends SmartTileEntity implements IHav
 					tagKey,
 					tagProperties.asResource(),
 					tagProperties.getTime() / 100,
-					tagProperties.getDropletAmount() / 100
+					tagProperties.getDropletAmount() / 100,
+						tagProperties.isSpecialFuel()
 				)
 		);
+
+		burningTick();
 
 		if (remainingBurnTime > 0)
 			remainingBurnTime--;
@@ -129,7 +130,7 @@ public class LiquidBlazeBurnerTileEntity extends SmartTileEntity implements IHav
 
 		updateBlockState();
 	}
-	private boolean setBurnTag(TagKey<Fluid> tagKey, ResourceLocation burnableTagLocation, int time, int fluidDropletAmount) {
+	private boolean setBurnTag(TagKey<Fluid> tagKey, ResourceLocation burnableTagLocation, int time, int fluidDropletAmount, boolean isSpecial) {
 		if (
 						tagKey.location().equals(burnableTagLocation) &&
 						!Transaction.isOpen() &&
@@ -140,7 +141,7 @@ public class LiquidBlazeBurnerTileEntity extends SmartTileEntity implements IHav
 			fluidTank.extract(fluidTank.variant, fluidDropletAmount, transaction);
 			transaction.commit();
 			remainingBurnTime = remainingBurnTime + time;
-			activeFuel = FuelType.NORMAL;
+			activeFuel = isSpecial ? FuelType.SPECIAL : FuelType.NORMAL;
 			return true;
 		}
 		return false;
@@ -155,9 +156,17 @@ public class LiquidBlazeBurnerTileEntity extends SmartTileEntity implements IHav
 		if (remainingBurnTime > MAX_HEAT_CAPACITY)
 			return;
 
-		activeFuel = FuelType.NORMAL;
+		boolean isSpecial = FluidTagRecipeComparator.argsToTag(fluidTank.getFluid().getFluid(), (tagProperties, tagKey) -> tagProperties.isSpecialFuel()
+		);
 
-		if (getHeatLevelFromBlock() != getHeatLevelFromBlock()) {
+		activeFuel = isSpecial ? FuelType.SPECIAL : FuelType.NORMAL;
+
+
+		BlazeBurnerBlock.HeatLevel prev = getHeatLevelFromBlock();
+		playSound();
+		updateBlockState();
+
+		if (prev != getHeatLevelFromBlock()) {
 			level.playSound(null, worldPosition, SoundEvents.BLAZE_AMBIENT, SoundSource.BLOCKS,
 					.125f + level.random.nextFloat() * .125f, 1.15f - level.random.nextFloat() * .25f);
 

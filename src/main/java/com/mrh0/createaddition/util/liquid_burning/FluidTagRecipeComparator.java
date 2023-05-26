@@ -32,9 +32,11 @@ public final class FluidTagRecipeComparator {
                i = 0;
                crashOnLow = false;
            }
+           boolean isSpecial = tagKey.location().getPath().startsWith("superheated", 14);
            BurnableTagProperties tagProperties = new BurnableTagProperties(
                    i,
-                   crashOnLow
+                   crashOnLow,
+                   isSpecial
            );
            Boolean bl = args.args(tagProperties, tagKey);
            if (bl != null && bl && tagProperties.getTime() != 0) {
